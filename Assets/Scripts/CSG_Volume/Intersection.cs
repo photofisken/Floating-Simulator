@@ -27,7 +27,7 @@ public class MyTriangle
 [System.Serializable]
 public class MyVertex
 {
-    Vector3 position;
+    public Vector3 position;
     public List<MyVertex> connections = new List<MyVertex>();
     public List<MyTriangle> triangles = new List<MyTriangle>();
 
@@ -59,29 +59,46 @@ public class MyVertex
     }
 }
 
-public class Interection : MonoBehaviour
+public class Interection
 {
-    private GameObject water;
-    private float waterLine;
+    // All the converted triangles and vertices in the mesh
+    List<MyTriangle> myTriangles = new List<MyTriangle>();
+    List<MyVertex> myVertices = new List<MyVertex>();
 
     private void Start()
     {
-        water = GameObject.Find("Water");
-        waterLine = water.transform.position.y;
     }
 
-    public void Bruh(Mesh mesh)
+    public List<MyTriangle>[] Intersect(Mesh mesh, Transform meshTransform, Vector3 intersectPosition, Vector3 normal)
     {
-        ConvertToTriangles(mesh);
+        List<MyTriangle> trianglesOverWater = new List<MyTriangle>();
+        List<MyTriangle> trianglesUnderWater = new List<MyTriangle>();
 
+        // Convert the mesh vertexes into myVertexes with connections and stuff
+        ConvertToTriangles(mesh);
+        Matrix4x4 localToWorld = meshTransform.localToWorldMatrix;
+
+        // For every triangle in the mesh, check its three vertices and see if average is over or under water
+        for (int i = 0; i < myTriangles.Count; i++)
+        {
+            Vector3 averagePos = new Vector3();
+            foreach (MyVertex vertex in myTriangles[i].vertices)
+            {
+                Vector3 world_v = localToWorld.MultiplyPoint3x4(vertex.position);               
+                averagePos += world_v;
+            }
+            averagePos /= 3;
+            // If under water, add to underWater list, else add to overWater list
+            if (averagePos.y <= intersectPosition.y)
+            {
+                trianglesUnderWater.Add(myTriangles[i]);
+            }
+            else trianglesOverWater.Add(myTriangles[i]);
+        }
     }
     
     public void ConvertToTriangles(Mesh mesh)
     {
-        // All the converted triangles and vertices in the mesh
-        List<MyTriangle> myTriangles = new List<MyTriangle>();
-        List<MyVertex> myVertices = new List<MyVertex>();
-
         // Original vertices and triangles from the mesh
         Vector3[] vertices = mesh.vertices;
         int[] triangles = mesh.triangles;
