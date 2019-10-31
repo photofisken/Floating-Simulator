@@ -59,23 +59,26 @@ public class MyVertex
     }
 }
 
-public class Interection
+public class Intersection
 {
     // All the converted triangles and vertices in the mesh
-    List<MyTriangle> myTriangles = new List<MyTriangle>();
-    List<MyVertex> myVertices = new List<MyVertex>();
+
 
     private void Start()
     {
     }
 
-    public List<MyTriangle>[] Intersect(Mesh mesh, Transform meshTransform, Vector3 intersectPosition, Vector3 normal)
+    public static List<MyTriangle>[] GetTriangleLists(Mesh mesh, Transform meshTransform, Vector3 intersectPosition)
     {
         List<MyTriangle> trianglesOverWater = new List<MyTriangle>();
         List<MyTriangle> trianglesUnderWater = new List<MyTriangle>();
 
+        List<MyVertex> myVertices;
+        List<MyTriangle> myTriangles;
+
         // Convert the mesh vertexes into myVertexes with connections and stuff
-        ConvertToTriangles(mesh);
+        ConvertToTriangles(mesh, out myVertices, out myTriangles);
+
         Matrix4x4 localToWorld = meshTransform.localToWorldMatrix;
 
         // For every triangle in the mesh, check its three vertices and see if average is over or under water
@@ -95,10 +98,17 @@ public class Interection
             }
             else trianglesOverWater.Add(myTriangles[i]);
         }
+        List<MyTriangle>[] triangles = new List<MyTriangle>[2];
+        triangles[0] = trianglesOverWater;
+        triangles[1] = trianglesUnderWater;
+        return triangles;
     }
     
-    public void ConvertToTriangles(Mesh mesh)
+    public static void ConvertToTriangles(Mesh mesh, out List<MyVertex> myVertices, out List<MyTriangle> myTriangles)
     {
+        myVertices = new List<MyVertex>();
+        myTriangles = new List<MyTriangle>();
+
         // Original vertices and triangles from the mesh
         Vector3[] vertices = mesh.vertices;
         int[] triangles = mesh.triangles;
